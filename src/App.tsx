@@ -5,6 +5,7 @@ import Form from './components/Form';
 import UsersList from './components/UsersList';
 import { fetchUsers, LogIn } from './services/usersService';
 import Login from './components/Login';
+import UpdateUser from './components/UpdateUser';
 
 interface AppState {
     currentUser: User | null;
@@ -24,6 +25,7 @@ function App() {
     const [newUsersNumber, setNewUsersNumber] = useState<AppState['newUsersNumber']>(0);
     const [isLoggedIn, setIsLoggedIn] = useState<AppState['isLoggedIn']>(false);
     const [currentUser, setCurrentUser] = useState<AppState['currentUser']>(null);
+    const [userToEdit, setUserToEdit] = useState<User | null>(null);
 
     const [uiState, setUiState] = useState<UIState>({
         isDarkMode: false,
@@ -31,7 +33,7 @@ function App() {
         newUserName: '',
     });
 
-    const divRef = useRef<HTMLDivElement>(null); // Mantenemos el useRef como ejemplo
+    const divRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const loadUsers = async () => {
@@ -72,13 +74,10 @@ function App() {
     const toggleDarkMode = () => {
         setUiState((prev) => {
             const newMode = !prev.isDarkMode;
-
-            // Ejemplo de uso de useRef para cambiar estilos directamente
             if (divRef.current) {
                 divRef.current.style.backgroundColor = newMode ? '#333333' : '#ffffff';
                 divRef.current.style.color = newMode ? '#ffffff' : '#000000';
             }
-
             return { ...prev, isDarkMode: newMode };
         });
     };
@@ -95,9 +94,21 @@ function App() {
         }
     };
 
+    const handleEditUser = (user: User) => {
+        setUserToEdit(user);
+    };
+
+    const handleUpdateUser = (updatedUser: User) => {
+        setUsers((prevUsers) =>
+            prevUsers.map((user) =>
+                user.name === updatedUser.name ? updatedUser : user
+            )
+        );
+        setUserToEdit(null);
+    };
+
     return (
         <div className="App" ref={divRef}>
-            {/* Notification Popup */}
             {uiState.showNotification && (
                 <div className={`notification ${uiState.isDarkMode ? 'dark' : 'light'}`}>
                     User <strong>{uiState.newUserName}</strong> has been created successfully!
@@ -110,13 +121,17 @@ function App() {
 
             <div className="content">
                 {!isLoggedIn ? (
-                    <Login
-                        onLogin={({ email, password }) => handleLogin(email, password)}
+                    <Login onLogin={({ email, password }) => handleLogin(email, password)} />
+                ) : userToEdit ? (
+                    <UpdateUser
+                        user={userToEdit}
+                        onUpdate={handleUpdateUser}
+                        onCancel={() => setUserToEdit(null)}
                     />
                 ) : (
                     <>
                         <h2>Bienvenido, {currentUser?.name}!</h2>
-                        <UsersList users={users} />
+                        <UsersList users={users} onEditUser={handleEditUser} />
                         <p>New users: {newUsersNumber}</p>
                         <Form onNewUser={handleNewUser} />
                     </>
