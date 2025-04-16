@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User } from '../../types';
 import styles from './UpdateUser.module.css';
+import { updateUser } from '../../services/usersService';
 
 interface Props {
     user: User;
@@ -10,15 +11,31 @@ interface Props {
 
 const UpdateUser: React.FC<Props> = ({ user, onUpdate, onCancel }) => {
     const [formData, setFormData] = useState<User>({ ...user });
+    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: name === 'age' ? parseInt(value) : value });
-    };
+        setFormData(prev => ({
+            ...prev,
+            [name]: name === 'age' ? parseInt(value) : value,
+        }));
+    };    
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        onUpdate(formData);
+        setLoading(true);
+        setError(null);
+
+        try {
+            const updated = await updateUser(formData);
+            onUpdate(updated);
+        } catch (err) {
+            console.error('Update failed:', err);
+            setError('Could not update user.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -33,6 +50,7 @@ const UpdateUser: React.FC<Props> = ({ user, onUpdate, onCancel }) => {
                         value={formData.name}
                         onChange={handleChange}
                         className={styles.input}
+                        disabled={loading}
                     />
                 </div>
 
@@ -44,6 +62,7 @@ const UpdateUser: React.FC<Props> = ({ user, onUpdate, onCancel }) => {
                         value={formData.age}
                         onChange={handleChange}
                         className={styles.input}
+                        disabled={loading}
                     />
                 </div>
 
@@ -54,12 +73,28 @@ const UpdateUser: React.FC<Props> = ({ user, onUpdate, onCancel }) => {
                         value={formData.email}
                         onChange={handleChange}
                         className={styles.input}
+                        disabled={loading}
                     />
                 </div>
 
+                {error && <p style={{ color: 'red' }}>{error}</p>}
+
                 <div className={styles.buttonGroup}>
-                    <button type="submit" className={`${styles.button} ${styles.saveBtn}`}>Update</button>
-                    <button type="button" onClick={onCancel} className={`${styles.button} ${styles.cancelBtn}`}>Cancel</button>
+                    <button
+                        type="submit"
+                        className={`${styles.button} ${styles.saveBtn}`}
+                        disabled={loading}
+                    >
+                        {loading ? 'Updating...' : 'Update'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className={`${styles.button} ${styles.cancelBtn}`}
+                        disabled={loading}
+                    >
+                        Cancel
+                    </button>
                 </div>
             </div>
         </form>

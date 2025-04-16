@@ -98,13 +98,20 @@ function App() {
         setUserToEdit(user);
     };
 
-    const handleUpdateUser = (updatedUser: User) => {
-        setUsers((prevUsers) =>
-            prevUsers.map((user) =>
-                user.name === updatedUser.name ? updatedUser : user
-            )
-        );
-        setUserToEdit(null);
+    const handleUpdateUser = async (updatedUser: User) => {
+        try {
+            setUsers((prevUsers) =>
+                prevUsers.map((user) =>
+                    user._id === updatedUser._id ? updatedUser : user
+                )
+            );
+            setUserToEdit(null);
+    
+            const fetchedUsers = await fetchUsers();
+            setUsers(fetchedUsers);
+        } catch (error) {
+            console.error('Error updating user:', error);
+        }
     };
 
     return (
